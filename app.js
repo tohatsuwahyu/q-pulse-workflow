@@ -1,5 +1,5 @@
 /* Q-Pulse frontend. Set this after deploying Code.gs as a Web App. */
-const API_URL = "";
+const API_URL = "https://script.google.com/macros/s/AKfycbw2FH90KLUbPNrWS8PILmkUS9ml5-fnFkslfc4yeHJ7e9QfP2ST-MgAOKRsRz9M1GH_Ow/exec";
 const state = {
   lang: "ja",
   tasks: [

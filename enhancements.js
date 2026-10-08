@@ -77,8 +77,8 @@ async function loadFromApi() {
     showToast("Backend belum terbaca. Cek deployment Apps Script.");
   }
 }
-const qPulseOriginalOpenModal = openModal;
-function openModal(type) {
+const qPulseOriginalOpenModal = window.openModal;
+function qPulseOpenModal(type) {
   if (type !== "emergency" && type !== "member") return qPulseOriginalOpenModal(type);
   const modal = $("#entryModal"), fields = $("#modalFields");
   if (type === "emergency") {
@@ -130,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const b = document.createElement("button");
     b.className = "secondary";
     b.textContent = "⚠ 緊急対応";
-    b.onclick = () => openModal("emergency");
+    b.onclick = () => qPulseOpenModal("emergency");
     hero.appendChild(b);
   }
   const nav = document.querySelector(".sidebar nav");
@@ -147,7 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
     section.id = "members"; section.className = "view";
     section.innerHTML = "<div class='view-title'><div><h2>メンバー / Members</h2><p>役割・稼働時間・作業負荷を管理</p></div><button class='primary' id='newMember'>＋ メンバー追加</button></div><div class='panel table-wrap'><table><thead><tr><th>Name</th><th>Role</th><th>Capacity</th><th>Planned work</th><th>Status</th></tr></thead><tbody id='memberTable'></tbody></table></div>";
     main.appendChild(section);
-    $("#newMember").onclick = () => openModal("member");
+    $("#newMember").onclick = () => qPulseOpenModal("member");
   }
   qPulseLoadProfile();
 });

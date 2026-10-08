@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Q-Pulse | 品質管理生産技術部</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-mark">Q</span><span>Q-Pulse</span></div>
+    <p class="dept" data-i18n="department">品質管理生産技術部</p>
+    <nav>
+      <button class="nav-item active" data-view="dashboard"><span>▦</span><span data-i18n="dashboard">ダッシュボード</span></button>
+      <button class="nav-item" data-view="tasks"><span>✓</span><span data-i18n="tasks">タスク</span></button>
+      <button class="nav-item" data-view="projects"><span>◈</span><span data-i18n="projects">プロジェクト</span></button>
+      <button class="nav-item" data-view="schedule"><span>◷</span><span data-i18n="schedule">スケジュール</span></button>
+      <button class="nav-item" data-view="reports"><span>▤</span><span data-i18n="reports">作業日報</span></button>
+    </nav>
+    <div class="sidebar-bottom"><span class="online-dot"></span><span data-i18n="systemOnline">システム稼働中</span></div>
+  </aside>
+
+  <main>
+    <header>
+      <div><p class="eyebrow" id="today"></p><h1 id="pageTitle">おはようございます</h1></div>
+      <div class="header-actions"><button class="language" id="languageBtn">EN</button><button class="icon-btn" aria-label="Notifications">♧<i></i></button><div class="avatar">YM</div></div>
+    </header>
+
+    <section id="dashboard" class="view active">
+      <div class="hero"><div><span class="pill" data-i18n="todayFocus">TODAY'S FOCUS</span><h2 data-i18n="focusTitle">品質を守り、改善を前へ。</h2><p data-i18n="focusText">優先度の高いタスクが3件あります。期限を確認しましょう。</p></div><button class="primary" data-open-modal="task"><span>＋</span><span data-i18n="newTask">新規タスク</span></button></div>
+      <div class="metrics">
+        <article><div class="metric-top"><span data-i18n="openTasks">未完了タスク</span><span class="metric-icon indigo">✓</span></div><strong id="openTaskCount">0</strong><small><b>+2</b> <span data-i18n="fromYesterday">昨日から</span></small></article>
+        <article><div class="metric-top"><span data-i18n="dueThisWeek">今週の期限</span><span class="metric-icon orange">◷</span></div><strong id="dueCount">0</strong><small><b class="orange-text">2</b> <span data-i18n="needAttention">要確認</span></small></article>
+        <article><div class="metric-top"><span data-i18n="projectHealth">プロジェクト健全性</span><span class="metric-icon green">↗</span></div><strong>86%</strong><small><b>+4.2%</b> <span data-i18n="thisMonth">今月</span></small></article>
+        <article><div class="metric-top"><span data-i18n="reportSubmitted">日報提出率</span><span class="metric-icon blue">▤</span></div><strong>94%</strong><small><b>17 / 18</b> <span data-i18n="members">メンバー</span></small></article>
+      </div>
+      <div class="dashboard-grid">
+        <article class="panel task-panel"><div class="panel-head"><div><h3 data-i18n="priorityTasks">優先タスク</h3><p data-i18n="prioritySub">今日の優先順位</p></div><button class="text-btn" data-go="tasks" data-i18n="viewAll">すべて見る</button></div><div id="priorityTaskList" class="task-list"></div></article>
+        <article class="panel heatmap-panel"><div class="panel-head"><div><h3 data-i18n="workloadHeatmap">作業負荷ヒートマップ</h3><p data-i18n="workloadSub">今週のメンバー別負荷</p></div><button class="text-btn" data-go="reports" data-i18n="details">詳細</button></div><div id="heatmap"></div><div class="legend"><span>低</span><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i><span>高</span></div></article>
+        <article class="panel project-panel"><div class="panel-head"><div><h3 data-i18n="projectProgress">プロジェクト進捗</h3><p data-i18n="projectSub">期限とリスクの確認</p></div><button class="text-btn" data-go="projects" data-i18n="viewAll">すべて見る</button></div><div id="projectList"></div></article>
+        <article class="panel report-panel"><div class="panel-head"><div><h3 data-i18n="dailyReport">本日の作業日報</h3><p data-i18n="reportSub">作業内容を記録しましょう</p></div><span class="status done" data-i18n="draftSaved">下書き保存済み</span></div><textarea id="quickReport" data-i18n-placeholder="reportPlaceholder" placeholder="今日行った作業、課題、明日の予定を記入…"></textarea><div class="report-footer"><span class="muted" data-i18n="autoSummary">AI集計対象</span><button class="primary small" id="saveReport" data-i18n="saveReport">日報を保存</button></div></article>
+      </div>
+    </section>
+
+    <section id="tasks" class="view"><div class="view-title"><div><h2 data-i18n="tasks">タスク</h2><p data-i18n="tasksDesc">品質・生産技術の作業を一元管理</p></div><button class="primary" data-open-modal="task">＋ <span data-i18n="newTask">新規タスク</span></button></div><div class="filter-row"><input id="taskSearch" data-i18n-placeholder="searchTasks" placeholder="タスクを検索"><select id="statusFilter"><option value="" data-i18n="allStatus">すべての状態</option><option value="Not Started">未着手</option><option value="In Progress">進行中</option><option value="Done">完了</option></select></div><div class="panel table-wrap"><table><thead><tr><th data-i18n="taskName">タスク名</th><th data-i18n="project">プロジェクト</th><th data-i18n="owner">担当者</th><th data-i18n="dueDate">期限</th><th data-i18n="priority">優先度</th><th data-i18n="status">状態</th></tr></thead><tbody id="taskTable"></tbody></table></div></section>
+
+    <section id="projects" class="view"><div class="view-title"><div><h2 data-i18n="projects">プロジェクト</h2><p data-i18n="projectsDesc">改善活動・新規立上げの進捗管理</p></div><button class="primary" data-open-modal="project">＋ <span data-i18n="newProject">新規プロジェクト</span></button></div><div id="projectCards" class="project-cards"></div></section>
+
+    <section id="schedule" class="view"><div class="view-title"><div><h2 data-i18n="schedule">スケジュール</h2><p data-i18n="scheduleDesc">監査、会議、評価の予定</p></div><button class="primary" data-open-modal="schedule">＋ <span data-i18n="newSchedule">予定を追加</span></button></div><div class="panel calendar"><div class="calendar-head"><button>‹</button><h3>2026年10月</h3><button>›</button></div><div class="weekdays"><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span><span>日</span></div><div id="calendarDays" class="calendar-days"></div></div></section>
+
+    <section id="reports" class="view"><div class="view-title"><div><h2 data-i18n="reports">作業日報</h2><p data-i18n="reportsDesc">日々の記録を自動集計し、上司への報告を簡潔に</p></div><button class="primary" data-open-modal="report">＋ <span data-i18n="writeReport">日報を書く</span></button></div><div class="metrics report-metrics"><article><span data-i18n="submittedToday">本日提出</span><strong>17/18</strong><small class="green-text">94%</small></article><article><span data-i18n="totalWorkHours">今週の合計作業時間</span><strong>326h</strong><small>18名</small></article><article><span data-i18n="openIssues">未解決課題</span><strong>4</strong><small class="orange-text" data-i18n="needAttention">要確認</small></article></div><article class="panel summary"><div><span class="pill" data-i18n="managerSummary">MANAGER SUMMARY</span><h3 data-i18n="weeklySummary">今週の自動集計レポート</h3><p data-i18n="weeklySummaryText">工程内不良低減PJは予定どおり進行中です。一方、測定機校正の承認待ちが1件あり、期限への影響を確認してください。</p></div><button class="secondary" data-i18n="downloadReport">レポートを出力</button></article></section>
+  </main>
+  <dialog id="entryModal"><form method="dialog"><div class="modal-head"><h2 id="modalTitle">新規タスク</h2><button class="close" value="cancel">×</button></div><div id="modalFields"></div><div class="modal-actions"><button class="secondary" value="cancel" data-i18n="cancel">キャンセル</button><button class="primary" id="modalSave" value="default" data-i18n="save">保存</button></div></form></dialog>
+  <div id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>

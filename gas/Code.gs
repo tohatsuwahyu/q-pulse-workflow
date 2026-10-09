@@ -115,21 +115,58 @@ function workload_() {
 function sendAlerts_() {
   const lead = Number(setting_('Alert Lead Days')) || 3;
   const today = new Date(); today.setHours(0,0,0,0);
-  const messages = [];
+  const projects = rows_(QP.PROJECTS);
+  const messagesByEmail = {};
+  const chatMessages = [];
+  const add = (email, message) => {
+    if (!email) return;
+    if (!messagesByEmail[email]) messagesByEmail[email] = [];
+    if (!messagesByEmail[email].includes(message)) messagesByEmail[email].push(message);
+  };
+  const managerEmail = setting_('Manager Email');
+
   rows_(QP.TASKS).filter(t => t.Status !== 'Done' && t['Due Date']).forEach(t => {
     const due = new Date(t['Due Date']); due.setHours(0,0,0,0);
-    const days = Math.ceil((due-today)/86400000);
-    if (days <= lead) messages.push('Task '+t['Task ID']+' — '+t['Task Name']+' (due '+formatDate_(due)+', '+days+' day(s))');
+    const days = Math.ceil((due - today) / 86400000);
+    if (days > lead) return;
+    const project = projects.find(p => p['Project Name'] === t.Project);
+    const message = 'Task: '+t['Task Name']+' / deadline: '+formatDate_(due)+' ('+days+' day(s))';
+    add(emailForMemberName_(t.Owner), message);
+    if (project) add(emailForMemberName_(project.Leader), message);
+    add(managerEmail, message);
+    chatMessages.push(message);
   });
-  rows_(QP.PROJECTS).filter(p => p.Health === 'At Risk').forEach(p => messages.push('AT RISK project: '+p['Project Name']+' (deadline '+formatDate_(p.Deadline)+')'));
-  if (!messages.length) return {ok:true, sent:false, message:'No alert conditions today.'};
-  const text = 'Q-Pulse alert\n\n' + messages.join('\n');
-  const email = setting_('Manager Email');
-  if (email) MailApp.sendEmail(email, 'Q-Pulse: deadline / project alert', text);
+
+  projects.filter(p => p.Deadline || p.Health === 'At Risk').forEach(p => {
+    const deadline = p.Deadline ? new Date(p.Deadline) : null;
+    if (deadline) deadline.setHours(0,0,0,0);
+    const days = deadline ? Math.ceil((deadline - today) / 86400000) : null;
+    const atRisk = p.Health === 'At Risk';
+    if (!atRisk && (days === null || days > lead)) return;
+    const reason = atRisk ? 'AT RISK' : 'deadline '+formatDate_(deadline)+' ('+days+' day(s))';
+    const message = 'Project: '+p['Project Name']+' / '+reason;
+    add(emailForMemberName_(p.Leader), message);
+    add(managerEmail, message);
+    chatMessages.push(message);
+  });
+
+  const recipients = Object.keys(messagesByEmail);
+  if (!recipients.length && !chatMessages.length) return {ok:true, sent:false, message:'No alert conditions today.'};
+
+  recipients.forEach(email => {
+    const text = 'Q-Pulse reminder\n\n'+messagesByEmail[email].join('\n')+
+      '\n\nPlease review the project/task and update progress if needed.';
+    MailApp.sendEmail(email, 'Q-Pulse: reminder / risk alert', text);
+    append_(QP.ALERT_LOG, [new Date(), 'Responsible-person reminder', messagesByEmail[email].join(' | '), email]);
+  });
+
   const webhook = setting_('Google Chat Webhook URL');
-  if (webhook) UrlFetchApp.fetch(webhook, {method:'post', contentType:'application/json', payload:JSON.stringify({text:text}), muteHttpExceptions:true});
-  append_(QP.ALERT_LOG, [new Date(), 'Daily deadline / risk alert', messages.join(' | '), email || 'Google Chat only']);
-  return {ok:true, sent:true, count:messages.length};
+  if (webhook && chatMessages.length) {
+    UrlFetchApp.fetch(webhook, {method:'post', contentType:'application/json',
+      payload:JSON.stringify({text:'Q-Pulse alert\n\n'+[...new Set(chatMessages)].join('\n')}),
+      muteHttpExceptions:true});
+  }
+  return {ok:true, sent:true, recipients:recipients.length, count:chatMessages.length};
 }
 function createDailyAlertTrigger() {
   ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'sendAlerts_').forEach(t => ScriptApp.deleteTrigger(t));
@@ -164,6 +201,10 @@ function deleteRow_(sheetName, idHeader, id) {
 }
 function recordById_(sheetName, idHeader, id) { return rows_(sheetName).find(r => String(r[idHeader]) === String(id)) || {}; }
 function findMember_(email) { return rows_(QP.MEMBERS).find(m => String(m.Email).toLowerCase() === String(email).toLowerCase() && String(m.Active).toUpperCase() !== 'FALSE'); }
+function emailForMemberName_(name) {
+  const member = rows_(QP.MEMBERS).find(m => String(m.Name) === String(name) && String(m.Active).toUpperCase() !== 'FALSE');
+  return member ? String(member.Email || '').trim() : '';
+}
 function setting_(key) { const row=rows_(QP.SETTINGS).find(x=>x.Setting===key); return row ? row.Value : ''; }
 function newId_(prefix) { return prefix+'-'+Utilities.formatDate(new Date(),Session.getScriptTimeZone(),'yyyyMMdd-HHmmss'); }
 function formatDate_(d) { return Utilities.formatDate(new Date(d),Session.getScriptTimeZone(),'yyyy-MM-dd'); }

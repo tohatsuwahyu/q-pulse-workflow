@@ -24,7 +24,7 @@ function doPost(e) {
     const data = body.data || {};
     const role = requireRole_(['Admin','Manager','Member']);
     if (body.action === 'createTask') {
-      append_(QP.TASKS, [newId_('T'), data.name, data.project || 'Ad-hoc', data.owner, data.due, data.priority || 'Medium', data.status || 'Not Started', data.plannedHours || 4, data.emergencyType || '', data.impact || '', new Date(), '', '']);
+      append_(QP.TASKS, [newId_('T'), data.name, data.project || '共通業務・臨時対応', data.owner, data.due, data.priority || 'Medium', data.status || 'Not Started', data.plannedHours || 4, data.emergencyType || '', data.impact || '', new Date(), '', '']);
     } else if (body.action === 'createProject') {
       requireRole_(['Admin','Manager']);
       append_(QP.PROJECTS, [newId_('P'), data.name, data.leader, data.deadline, 0, 'On Track', data.desc || '', new Date()]);
@@ -38,7 +38,7 @@ function doPost(e) {
     } else if (body.action === 'updateTask') {
       const previous = recordById_(QP.TASKS, 'Task ID', data.id);
       const completedAt = data.status === 'Done' ? (previous['Completed At'] || new Date()) : '';
-      updateRow_(QP.TASKS, 'Task ID', data.id, [data.id, data.name, data.project || 'Ad-hoc', data.owner, data.due, data.priority, data.status, data.plannedHours || 4, data.emergencyType || '', data.impact || '', previous['Created At'] || '', previous.Notes || '', completedAt]);
+      updateRow_(QP.TASKS, 'Task ID', data.id, [data.id, data.name, data.project || '共通業務・臨時対応', data.owner, data.due, data.priority, data.status, data.plannedHours || 4, data.emergencyType || '', data.impact || '', previous['Created At'] || '', previous.Notes || '', completedAt]);
     } else if (body.action === 'updateProject') {
       requireRole_(['Admin','Manager']);
       updateRow_(QP.PROJECTS, 'Project ID', data.id, [data.id, data.name, data.leader, data.deadline, data.progress || 0, data.health || 'On Track', data.desc || '', '']);

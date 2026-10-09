@@ -17,7 +17,7 @@ Panduan ini menjelaskan cara memakai aplikasi **Q-Pulse** untuk 品質管理生�
 | プロジェクト | Proyek | Memantau aktivitas improvement atau persiapan produksi |
 | メンバー | Anggota | Mengatur nama, email, peran, dan kapasitas kerja |
 | スケジュール | Jadwal | Rencana audit, rapat, dan kalibrasi |
-| 作業日報 | Laporan kerja harian | Mencatat pekerjaan harian |
+| 進捗メモ（任意） | Catatan progres opsional | Hanya diisi saat ada progres atau masalah penting |
 
 ## 3. Menambahkan member baru
 
@@ -37,11 +37,12 @@ Catatan: jika belum menggunakan sistem login, peran pada tahap ini hanya data pe
 
 1. Buka **タスク**.
 2. Klik **＋ 新規タスク**.
-3. Isi nama task, proyek, 担当者 (PIC), 期限 (deadline), dan 予定工数（時間）.
-4. Pilih:
+3. Pilih **プロジェクト** dari dropdown. Deadline task tidak boleh melewati deadline proyek.
+4. Pilih 担当者 (PIC), lalu isi 予定工数（時間）.
+5. Pilih:
    - **優先度**: 最優先 / 高 / 中 / 低.
    - **状態**: 未着手 / 進行中 / 完了.
-5. Klik **保存**.
+6. Klik **保存**.
 
 ## 5. Pekerjaan mendadak: mesin rusak atau produksi berhenti
 
@@ -69,12 +70,11 @@ Di menu **メンバー**:
 - **適正** = beban masih dalam kapasitas.
 - **過負荷** = planned hours lebih besar dari kapasitas. Pindahkan sebagian task ke anggota lain atau ubah deadline.
 
-## 8. Mengisi 作業日報 (laporan harian)
+## 8. Mengisi 進捗メモ（任意）
 
-1. Buka **作業日報**.
-2. Klik **＋ 日報を書く**.
-3. Isi tanggal, jam kerja, pekerjaan yang dilakukan, masalah, serta rencana besok.
-4. Klik **保存**.
+1. Menu ini tidak wajib diisi setiap hari.
+2. Isi hanya bila ada progres penting, hambatan, keputusan, atau risiko.
+3. Klik **＋ 進捗メモを追加**, pilih task terkait bila ada, lalu klik **保存**.
 
 ## 9. Jika data tidak tersimpan ke Spreadsheet
 
@@ -96,4 +96,4 @@ Aplikasi web menampilkan data secara langsung, tetapi penyimpanan permanen memer
 | 予定工数 | Estimasi jam kerja |
 | 週の容量 | Kapasitas jam kerja per minggu |
 | 要注意 | Proyek memiliki risiko keterlambatan |
-| 作業日報 | Laporan pekerjaan harian |
+| 進捗メモ（任意） | Laporan pekerjaan harian |

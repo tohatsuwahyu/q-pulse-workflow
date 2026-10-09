@@ -13,7 +13,7 @@ function doGet(e) {
   if (action === 'setup') result = setup_();
   else if (action === 'dashboard') result = dashboard_();
   else if (action === 'me') result = currentUser_();
-  else if (action === 'alerts') result = sendAlerts_();
+  else if (action === 'alerts') result = sendAlerts();
   else result = {ok:false, error:'Unknown action'};
   return output_(result, e.parameter.callback);
 }
@@ -112,7 +112,7 @@ function workload_() {
 }
 
 /** Run once manually, then create a daily time trigger for this function. */
-function sendAlerts_() {
+function sendAlerts() {
   const lead = Number(setting_('Alert Lead Days')) || 3;
   const today = new Date(); today.setHours(0,0,0,0);
   const projects = rows_(QP.PROJECTS);
@@ -169,8 +169,8 @@ function sendAlerts_() {
   return {ok:true, sent:true, recipients:recipients.length, count:chatMessages.length};
 }
 function createDailyAlertTrigger() {
-  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'sendAlerts_').forEach(t => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('sendAlerts_').timeBased().everyDays(1).atHour(8).create();
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'sendAlerts').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('sendAlerts').timeBased().everyDays(1).atHour(8).create();
 }
 function ensureSheet_(name, headers) {
   const sh = sheet_(name);

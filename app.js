@@ -41,10 +41,11 @@ function formHtml(type,x={}){
  if(type==="report")return input("Work date","date",x.date||new Date().toISOString().slice(0,10),"date")+input("Worked hours","hours",x.hours||8,"number")+"<div class='field'><label>Work / issue / tomorrow plan</label><textarea name='content' required>"+esc(x.content||"")+"</textarea></div>";
 }
 function openForm(type,id){
+ const emergency=type==="emergency"; if(emergency){type="task";id=null}
  const collection=type==="task"?state.tasks:type==="project"?state.projects:type==="member"?state.members:state.reports;
- const item=id?collection.find(x=>x.id===id):{};
+ const item=id?collection.find(x=>x.id===id):(emergency?{priority:"Critical",status:"In Progress",emergencyType:"Machine breakdown",plannedHours:4}:{});
  state.editing={type,id};
- $("#modalTitle").textContent=(id?"Edit ":"New ")+type;
+ $("#modalTitle").textContent=emergency?"緊急対応 / Emergency":(id?"Edit ":"New ")+type;
  $("#modalFields").innerHTML=formHtml(type,item);
  $("#entryModal").showModal();
 }

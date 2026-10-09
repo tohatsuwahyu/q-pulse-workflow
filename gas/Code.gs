@@ -24,7 +24,7 @@ function doPost(e) {
     const data = body.data || {};
     const role = requireRole_(['Admin','Manager','Member']);
     if (body.action === 'createTask') {
-      append_(QP.TASKS, [newId_('T'), data.name, data.project || '共通業務・臨時対応', data.owner, data.due, data.priority || 'Medium', data.status || 'Not Started', data.plannedHours || 4, data.emergencyType || '', data.impact || '', new Date(), '', '', data.supportMembers || '']);
+      append_(QP.TASKS, [newId_('T'), data.name, data.project || '共通業務・臨時対応', data.owner, data.due, data.priority || 'Medium', data.status || 'Not Started', data.plannedHours || 4, data.emergencyType || '', data.impact || '', new Date(), '', '']);
     } else if (body.action === 'createProject') {
       requireRole_(['Admin','Manager']);
       append_(QP.PROJECTS, [newId_('P'), data.name, data.leader, data.deadline, 0, 'On Track', data.desc || '', new Date()]);
@@ -38,7 +38,7 @@ function doPost(e) {
     } else if (body.action === 'updateTask') {
       const previous = recordById_(QP.TASKS, 'Task ID', data.id);
       const completedAt = data.status === 'Done' ? (previous['Completed At'] || new Date()) : '';
-      updateRow_(QP.TASKS, 'Task ID', data.id, [data.id, data.name, data.project || '共通業務・臨時対応', data.owner, data.due, data.priority, data.status, data.plannedHours || 4, data.emergencyType || '', data.impact || '', previous['Created At'] || '', previous.Notes || '', completedAt, data.supportMembers || '']);
+      updateRow_(QP.TASKS, 'Task ID', data.id, [data.id, data.name, data.project || '共通業務・臨時対応', data.owner, data.due, data.priority, data.status, data.plannedHours || 4, data.emergencyType || '', data.impact || '', previous['Created At'] || '', previous.Notes || '', completedAt]);
     } else if (body.action === 'updateProject') {
       requireRole_(['Admin','Manager']);
       updateRow_(QP.PROJECTS, 'Project ID', data.id, [data.id, data.name, data.leader, data.deadline, data.progress || 0, data.health || 'On Track', data.desc || '', '']);
@@ -63,7 +63,7 @@ function doPost(e) {
 /** Run once by opening the Web App URL with ?action=setup */
 function setup_() {
   const schemas = {};
-  schemas[QP.TASKS] = ['Task ID','Task Name','Project','Owner','Due Date','Priority','Status','Planned Hours','Emergency Type','Machine / Line / Impact','Created At','Notes','Completed At','Support Members'];
+  schemas[QP.TASKS] = ['Task ID','Task Name','Project','Owner','Due Date','Priority','Status','Planned Hours','Emergency Type','Machine / Line / Impact','Created At','Notes','Completed At'];
   schemas[QP.PROJECTS] = ['Project ID','Project Name','Leader','Deadline','Progress %','Health','Objective / KPI','Created At'];
   schemas[QP.MEMBERS] = ['Member ID','Name','Email','Role','Capacity Hours / Week','Active','Created At'];
   schemas[QP.SCHEDULES] = ['Schedule ID','Event Name','Date','Time','Location / Link','Owner','Related Project'];
@@ -132,7 +132,6 @@ function sendAlerts() {
     const project = projects.find(p => p['Project Name'] === t.Project);
     const message = 'Task: '+t['Task Name']+' / deadline: '+formatDate_(due)+' ('+days+' day(s))';
     add(emailForMemberName_(t.Owner), message);
-    String(t['Support Members'] || '').split('|').map(n=>n.trim()).filter(Boolean).forEach(name => add(emailForMemberName_(name), message));
     if (project) add(emailForMemberName_(project.Leader), message);
     add(managerEmail, message);
     chatMessages.push(message);

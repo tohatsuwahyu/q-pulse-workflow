@@ -24,7 +24,7 @@ function doPost(e) {
     const data = body.data || {};
     const role = requireRole_(['Admin','Manager','Member']);
     if (body.action === 'createTask') {
-      append_(QP.TASKS, [newId_('T'), data.name, data.project || 'Ad-hoc', data.owner, data.due, data.priority || 'Medium', data.status || 'Not Started', data.plannedHours || 4, data.emergencyType || '', data.impact || '', new Date(), '']);
+      append_(QP.TASKS, [newId_('T'), data.name, data.project || 'Ad-hoc', data.owner, data.due, data.priority || 'Medium', data.status || 'Not Started', data.plannedHours || 4, data.emergencyType || '', data.impact || '', new Date(), '', '']);
     } else if (body.action === 'createProject') {
       requireRole_(['Admin','Manager']);
       append_(QP.PROJECTS, [newId_('P'), data.name, data.leader, data.deadline, 0, 'On Track', data.desc || '', new Date()]);
@@ -34,9 +34,11 @@ function doPost(e) {
     } else if (body.action === 'createSchedule') {
       append_(QP.SCHEDULES, [newId_('S'), data.name, data.date, data.time, data.place || '', data.owner || '', data.project || '']);
     } else if (body.action === 'createReport') {
-      append_(QP.REPORTS, [newId_('R'), data.date, currentUser_().email, data.hours || '', data.content || '', data.issues || '', data.tomorrow || '', new Date()]);
+      append_(QP.REPORTS, [newId_('R'), data.date, currentUser_().email, data.hours || '', data.content || '', data.issues || '', data.tomorrow || '', new Date(), data.taskId || '']);
     } else if (body.action === 'updateTask') {
-      updateRow_(QP.TASKS, 'Task ID', data.id, [data.id, data.name, data.project || 'Ad-hoc', data.owner, data.due, data.priority, data.status, data.plannedHours || 4, data.emergencyType || '', data.impact || '', '', '']);
+      const previous = recordById_(QP.TASKS, 'Task ID', data.id);
+      const completedAt = data.status === 'Done' ? (previous['Completed At'] || new Date()) : '';
+      updateRow_(QP.TASKS, 'Task ID', data.id, [data.id, data.name, data.project || 'Ad-hoc', data.owner, data.due, data.priority, data.status, data.plannedHours || 4, data.emergencyType || '', data.impact || '', previous['Created At'] || '', previous.Notes || '', completedAt]);
     } else if (body.action === 'updateProject') {
       requireRole_(['Admin','Manager']);
       updateRow_(QP.PROJECTS, 'Project ID', data.id, [data.id, data.name, data.leader, data.deadline, data.progress || 0, data.health || 'On Track', data.desc || '', '']);
@@ -61,11 +63,11 @@ function doPost(e) {
 /** Run once by opening the Web App URL with ?action=setup */
 function setup_() {
   const schemas = {};
-  schemas[QP.TASKS] = ['Task ID','Task Name','Project','Owner','Due Date','Priority','Status','Planned Hours','Emergency Type','Machine / Line / Impact','Created At','Notes'];
+  schemas[QP.TASKS] = ['Task ID','Task Name','Project','Owner','Due Date','Priority','Status','Planned Hours','Emergency Type','Machine / Line / Impact','Created At','Notes','Completed At'];
   schemas[QP.PROJECTS] = ['Project ID','Project Name','Leader','Deadline','Progress %','Health','Objective / KPI','Created At'];
   schemas[QP.MEMBERS] = ['Member ID','Name','Email','Role','Capacity Hours / Week','Active','Created At'];
   schemas[QP.SCHEDULES] = ['Schedule ID','Event Name','Date','Time','Location / Link','Owner','Related Project'];
-  schemas[QP.REPORTS] = ['Report ID','Work Date','Member Email','Work Hours','Work Details','Issues / Risks','Tomorrow Plan','Submitted At'];
+  schemas[QP.REPORTS] = ['Report ID','Work Date','Member Email','Work Hours','Work Details','Issues / Risks','Tomorrow Plan','Submitted At','Related Task ID'];
   schemas[QP.KPI] = ['Month','Member','Tasks Completed','On-time Rate','Planned Hours','Capacity Hours','Overload','Reports Submitted','Open Issues'];
   schemas[QP.SETTINGS] = ['Setting','Value','Note'];
   schemas[QP.ALERT_LOG] = ['Sent At','Alert Type','Item ID','Recipient'];
@@ -85,7 +87,7 @@ function setup_() {
 }
 
 function dashboard_() {
-  return {ok:true, tasks:rows_(QP.TASKS), projects:rows_(QP.PROJECTS), members:rows_(QP.MEMBERS), schedules:rows_(QP.SCHEDULES), workload:workload_(), profile:currentUser_()};
+  return {ok:true, tasks:rows_(QP.TASKS), projects:rows_(QP.PROJECTS), members:rows_(QP.MEMBERS), schedules:rows_(QP.SCHEDULES), reports:rows_(QP.REPORTS), workload:workload_(), profile:currentUser_()};
 }
 function currentUser_() {
   const email = Session.getActiveUser().getEmail() || '';
@@ -160,6 +162,7 @@ function deleteRow_(sheetName, idHeader, id) {
   if (index < 1) throw new Error('Record not found: '+id);
   sh.deleteRow(index+1);
 }
+function recordById_(sheetName, idHeader, id) { return rows_(sheetName).find(r => String(r[idHeader]) === String(id)) || {}; }
 function findMember_(email) { return rows_(QP.MEMBERS).find(m => String(m.Email).toLowerCase() === String(email).toLowerCase() && String(m.Active).toUpperCase() !== 'FALSE'); }
 function setting_(key) { const row=rows_(QP.SETTINGS).find(x=>x.Setting===key); return row ? row.Value : ''; }
 function newId_(prefix) { return prefix+'-'+Utilities.formatDate(new Date(),Session.getScriptTimeZone(),'yyyyMMdd-HHmmss'); }

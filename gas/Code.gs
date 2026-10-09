@@ -35,6 +35,22 @@ function doPost(e) {
       append_(QP.SCHEDULES, [newId_('S'), data.name, data.date, data.time, data.place || '', data.owner || '', data.project || '']);
     } else if (body.action === 'createReport') {
       append_(QP.REPORTS, [newId_('R'), data.date, currentUser_().email, data.hours || '', data.content || '', data.issues || '', data.tomorrow || '', new Date()]);
+    } else if (body.action === 'updateTask') {
+      updateRow_(QP.TASKS, 'Task ID', data.id, [data.id, data.name, data.project || 'Ad-hoc', data.owner, data.due, data.priority, data.status, data.plannedHours || 4, data.emergencyType || '', data.impact || '', '', '']);
+    } else if (body.action === 'updateProject') {
+      requireRole_(['Admin','Manager']);
+      updateRow_(QP.PROJECTS, 'Project ID', data.id, [data.id, data.name, data.leader, data.deadline, data.progress || 0, data.health || 'On Track', data.desc || '', '']);
+    } else if (body.action === 'updateMember') {
+      requireRole_(['Admin','Manager']);
+      updateRow_(QP.MEMBERS, 'Member ID', data.id, [data.id, data.name, data.email, data.role || 'Member', data.capacity || 40, data.active === false || data.active === 'FALSE' ? 'FALSE' : 'TRUE', '']);
+    } else if (body.action === 'deleteTask') {
+      deleteRow_(QP.TASKS, 'Task ID', data.id);
+    } else if (body.action === 'deleteProject') {
+      requireRole_(['Admin','Manager']);
+      deleteRow_(QP.PROJECTS, 'Project ID', data.id);
+    } else if (body.action === 'deleteMember') {
+      requireRole_(['Admin','Manager']);
+      deleteRow_(QP.MEMBERS, 'Member ID', data.id);
     } else throw new Error('Unknown action');
     return output_({ok:true, role:role});
   } catch (err) {
@@ -131,6 +147,19 @@ function ensureSheet_(name, headers) {
 function sheet_(name) { const ss=SpreadsheetApp.getActive(); return ss.getSheetByName(name) || ss.insertSheet(name); }
 function rows_(name) { const sh=sheet_(name); if(sh.getLastRow()<2) return []; const all=sh.getDataRange().getValues(); const h=all.shift(); return all.filter(r=>r.some(v=>v!=='' )).map(r=>h.reduce((o,k,i)=>(o[k]=r[i],o),{})); }
 function append_(name, row) { sheet_(name).appendRow(row); }
+function updateRow_(sheetName, idHeader, id, row) {
+  const sh = sheet_(sheetName), values = sh.getDataRange().getValues(), headers = values[0], col = headers.indexOf(idHeader);
+  if (col < 0) throw new Error('Missing ID column: '+idHeader);
+  const index = values.findIndex((r,i)=>i>0 && String(r[col]) === String(id));
+  if (index < 1) throw new Error('Record not found: '+id);
+  sh.getRange(index+1, 1, 1, row.length).setValues([row]);
+}
+function deleteRow_(sheetName, idHeader, id) {
+  const sh = sheet_(sheetName), values = sh.getDataRange().getValues(), col = values[0].indexOf(idHeader);
+  const index = values.findIndex((r,i)=>i>0 && String(r[col]) === String(id));
+  if (index < 1) throw new Error('Record not found: '+id);
+  sh.deleteRow(index+1);
+}
 function findMember_(email) { return rows_(QP.MEMBERS).find(m => String(m.Email).toLowerCase() === String(email).toLowerCase() && String(m.Active).toUpperCase() !== 'FALSE'); }
 function setting_(key) { const row=rows_(QP.SETTINGS).find(x=>x.Setting===key); return row ? row.Value : ''; }
 function newId_(prefix) { return prefix+'-'+Utilities.formatDate(new Date(),Session.getScriptTimeZone(),'yyyyMMdd-HHmmss'); }

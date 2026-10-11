@@ -24,21 +24,25 @@ function doPost(e) {
     const data = body.data || {};
     const role = requireRole_(['Admin','Manager','Member']);
     if (body.action === 'createTask') {
-      append_(QP.TASKS, [newId_('T'), data.name, data.project || '共通業務・臨時対応', data.owner, data.due, data.priority || 'Medium', data.status || 'Not Started', data.plannedHours || 4, data.emergencyType || '', data.impact || '', new Date(), '', '']);
+      append_(QP.TASKS, [newId_('T'), data.name, data.project || '共通業務・臨時対応', data.owner, data.due, data.priority || 'Medium', data.status || 'Not Started', data.plannedHours || 4, data.emergencyType || '', data.impact || '', new Date(), '', '', data.supportMembers || '']);
     } else if (body.action === 'createProject') {
       requireRole_(['Admin','Manager']);
-      append_(QP.PROJECTS, [newId_('P'), data.name, data.leader, data.deadline, 0, 'On Track', data.desc || '', new Date()]);
+      append_(QP.PROJECTS, [newId_('P'), data.name, data.leader, data.deadline, Number(data.progress) || 0, data.health || 'On Track', data.desc || '', new Date()]);
     } else if (body.action === 'createMember') {
       requireRole_(['Admin','Manager']);
       append_(QP.MEMBERS, [newId_('M'), data.name, data.email, data.role || 'Member', data.capacity || 40, 'TRUE', new Date()]);
     } else if (body.action === 'createSchedule') {
       append_(QP.SCHEDULES, [newId_('S'), data.name, data.date, data.time, data.place || '', data.owner || '', data.project || '']);
+    } else if (body.action === 'updateSchedule') {
+      updateRow_(QP.SCHEDULES, 'Schedule ID', data.id, [data.id, data.name, data.date, data.time || '', data.place || '', data.owner || '', data.project || '']);
+    } else if (body.action === 'deleteSchedule') {
+      deleteRow_(QP.SCHEDULES, 'Schedule ID', data.id);
     } else if (body.action === 'createReport') {
-      append_(QP.REPORTS, [newId_('R'), data.date, currentUser_().email, data.hours || '', data.content || '', data.issues || '', data.tomorrow || '', new Date(), data.taskId || '']);
+      append_(QP.REPORTS, [newId_('R'), data.date, emailForMemberName_(data.member) || currentUser_().email, data.hours || '', data.content || '', data.issues || '', data.tomorrow || '', new Date(), data.taskId || '']);
     } else if (body.action === 'updateTask') {
       const previous = recordById_(QP.TASKS, 'Task ID', data.id);
       const completedAt = data.status === 'Done' ? (previous['Completed At'] || new Date()) : '';
-      updateRow_(QP.TASKS, 'Task ID', data.id, [data.id, data.name, data.project || '共通業務・臨時対応', data.owner, data.due, data.priority, data.status, data.plannedHours || 4, data.emergencyType || '', data.impact || '', previous['Created At'] || '', previous.Notes || '', completedAt]);
+      updateRow_(QP.TASKS, 'Task ID', data.id, [data.id, data.name, data.project || '共通業務・臨時対応', data.owner, data.due, data.priority, data.status, data.plannedHours || 4, data.emergencyType || '', data.impact || '', previous['Created At'] || '', previous.Notes || '', completedAt, data.supportMembers || '']);
     } else if (body.action === 'updateProject') {
       requireRole_(['Admin','Manager']);
       updateRow_(QP.PROJECTS, 'Project ID', data.id, [data.id, data.name, data.leader, data.deadline, data.progress || 0, data.health || 'On Track', data.desc || '', '']);
@@ -63,14 +67,14 @@ function doPost(e) {
 /** Run once by opening the Web App URL with ?action=setup */
 function setup_() {
   const schemas = {};
-  schemas[QP.TASKS] = ['Task ID','Task Name','Project','Owner','Due Date','Priority','Status','Planned Hours','Emergency Type','Machine / Line / Impact','Created At','Notes','Completed At'];
+  schemas[QP.TASKS] = ['Task ID','Task Name','Project','Owner','Due Date','Priority','Status','Planned Hours','Emergency Type','Machine / Line / Impact','Created At','Notes','Completed At','Support Members'];
   schemas[QP.PROJECTS] = ['Project ID','Project Name','Leader','Deadline','Progress %','Health','Objective / KPI','Created At'];
   schemas[QP.MEMBERS] = ['Member ID','Name','Email','Role','Capacity Hours / Week','Active','Created At'];
   schemas[QP.SCHEDULES] = ['Schedule ID','Event Name','Date','Time','Location / Link','Owner','Related Project'];
   schemas[QP.REPORTS] = ['Report ID','Work Date','Member Email','Work Hours','Work Details','Issues / Risks','Tomorrow Plan','Submitted At','Related Task ID'];
   schemas[QP.KPI] = ['Month','Member','Tasks Completed','On-time Rate','Planned Hours','Capacity Hours','Overload','Reports Submitted','Open Issues'];
   schemas[QP.SETTINGS] = ['Setting','Value','Note'];
-  schemas[QP.ALERT_LOG] = ['Sent At','Alert Type','Item ID','Recipient'];
+  schemas[QP.ALERT_LOG] = ['Sent At','Alert Type','Item ID','Recipient','Status','Details'];
   Object.keys(schemas).forEach(name => ensureSheet_(name, schemas[name]));
   const settings = sheet_(QP.SETTINGS);
   if (settings.getLastRow() < 2) {
@@ -87,7 +91,7 @@ function setup_() {
 }
 
 function dashboard_() {
-  return {ok:true, tasks:rows_(QP.TASKS), projects:rows_(QP.PROJECTS), members:rows_(QP.MEMBERS), schedules:rows_(QP.SCHEDULES), reports:rows_(QP.REPORTS), workload:workload_(), profile:currentUser_()};
+  return {ok:true, tasks:rows_(QP.TASKS), projects:rows_(QP.PROJECTS), members:rows_(QP.MEMBERS), schedules:rows_(QP.SCHEDULES), reports:rows_(QP.REPORTS), alerts:rows_(QP.ALERT_LOG).slice(-50).reverse(), workload:workload_(), profile:currentUser_()};
 }
 function currentUser_() {
   const email = Session.getActiveUser().getEmail() || '';
@@ -105,7 +109,10 @@ function requireRole_(roles) {
 function workload_() {
   const tasks = rows_(QP.TASKS).filter(t => t.Status !== 'Done');
   return rows_(QP.MEMBERS).filter(m=>String(m.Active).toUpperCase() !== 'FALSE').map(m => {
-    const planned = tasks.filter(t => t.Owner === m.Name).reduce((n,t)=>n+(Number(t['Planned Hours'])||4),0);
+    const planned = tasks.reduce((sum,t) => {
+      const people = [...new Set([t.Owner].concat(String(t['Support Members'] || '').split('|')).map(x=>String(x || '').trim()).filter(Boolean))];
+      return sum + (people.includes(m.Name) ? (Number(t['Planned Hours']) || 4) / Math.max(1, people.length) : 0);
+    }, 0);
     const capacity = Number(m['Capacity Hours / Week']) || 40;
     return {name:m.Name, email:m.Email, role:m.Role, plannedHours:planned, capacityHours:capacity, overload:planned > capacity};
   });
@@ -156,8 +163,12 @@ function sendAlerts() {
   recipients.forEach(email => {
     const text = 'Q-Pulse reminder\n\n'+messagesByEmail[email].join('\n')+
       '\n\nPlease review the project/task and update progress if needed.';
-    MailApp.sendEmail(email, 'Q-Pulse: reminder / risk alert', text);
-    append_(QP.ALERT_LOG, [new Date(), 'Responsible-person reminder', messagesByEmail[email].join(' | '), email]);
+    try {
+      MailApp.sendEmail(email, 'Q-Pulse: reminder / risk alert', text);
+      logAlert_('Responsible-person reminder', messagesByEmail[email].join(' | '), email, 'Sent', 'Email sent');
+    } catch (err) {
+      logAlert_('Responsible-person reminder', messagesByEmail[email].join(' | '), email, 'Failed', String(err.message || err));
+    }
   });
 
   const webhook = setting_('Google Chat Webhook URL');
@@ -186,6 +197,7 @@ function ensureSheet_(name, headers) {
 function sheet_(name) { const ss=SpreadsheetApp.getActive(); return ss.getSheetByName(name) || ss.insertSheet(name); }
 function rows_(name) { const sh=sheet_(name); if(sh.getLastRow()<2) return []; const all=sh.getDataRange().getValues(); const h=all.shift(); return all.filter(r=>r.some(v=>v!=='' )).map(r=>h.reduce((o,k,i)=>(o[k]=r[i],o),{})); }
 function append_(name, row) { sheet_(name).appendRow(row); }
+function logAlert_(type, item, recipient, status, details) { append_(QP.ALERT_LOG, [new Date(), type, item, recipient, status, details]); }
 function updateRow_(sheetName, idHeader, id, row) {
   const sh = sheet_(sheetName), values = sh.getDataRange().getValues(), headers = values[0], col = headers.indexOf(idHeader);
   if (col < 0) throw new Error('Missing ID column: '+idHeader);

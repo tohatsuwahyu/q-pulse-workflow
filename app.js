@@ -200,3 +200,6 @@ document.addEventListener("click",e=>{
  if(t.closest("#calNext")){state.cal.m++;if(state.cal.m>11){state.cal.m=0;state.cal.y++}renderCalendar();return}
  if(t.closest("#calToday")){const n=new Date();state.cal={y:n.getFullYear(),m:n.getMonth()};renderCalendar();return}
  const day=t.closest("[data-day]");if(day)showDay(day.dataset.day)});
+
+/* ---------- ユーザーマニュアル ---------- */
+document.addEventListener("DOMContentLoaded",()=>{const button=document.getElementById("openManual");if(button)button.onclick=()=>window.open("./manual.html","_blank","noopener")});
